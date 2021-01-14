@@ -1,34 +1,46 @@
-## Welcome to 4th episode of my series **Code for Security**.  
+## Welcome to 5th episode of my series **Code for Security**.  
 
 <div align="center"> <img src="cover.png"/> </div>  
   
-Previously on my episode, we talk about vulnerability in yaml.load(), the one of most famous data-loader functions. Today I will exploiting about **Data deserialization** via **pickle** which provides for efficient binary deserialization and loading of Python datatypes but **inherently risky** if serialized data is tampered with.  
+When generating cryptographic keys (or key pairs), it is important to use strong parameters. Key length, for instance, should provides enough entropy against brute-force attacks.
+
+For RSA and DSA algorithms key size should be at least 2048 bits long
+For ECC (elliptic curve cryptography) algorithms key size should be at least 224 bits long
+For RSA public key exponent should be at least 65537.
+This rule raises an issue when an RSA, DSA or ECC key-pair generator is initialized using weak parameters.
+
+It supports the following libraries:
+
+cryptography
+PyCrypto
+Cryptodome
+### Noncompliant Code Example
+> from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa  
+>    
+> dsa.generate_private_key(key_size=1024, backend=backend) # Noncompliant  
+> rsa.generate_private_key(public_exponent=999, key_size=2048, backend=backend) # Noncompliant  
+> ec.generate_private_key(curve=ec.SECT163R2, backend=backend)  # Noncompliant  
     
-## Misuse of pickle  
-**pickle()** is function to dump live Python objects into an octet stream for storage or transmission, then reconstruct them back to possibly another instance of Python.  
-  
-pickle allows arbitrary objects to declare how they should be pickled by defining a __reduce__ method, which should return either a string or a tuple describing how to reconstruct this object on unpacking. In the simplest form, that tuple should just contain
-> - A callable (which must be either a class, or satisfy some other, odder, constraints), and A tuple of arguments to call that callable on.  
-> - Pickle will pickle each of these pieces separately, and then on unpickling, will call the callable on the provided arguments to construct the new object.  
-And so, we can construct a pickle that, when un-pickled, will execute /bin/sh, as follows:  
-  
-<div align="center"> <img src="pickle.png"/> </div> 
-  
-The reconstruction step is inherently risky if serialized data is tampered with. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling. ***The insecurity of Pickle is well recognized and clearly noted in Python documentation***.  
-  
 ## Solution
-**DO NOT USE pickle()** to un-pickle the data from an untrusted sources.  
-Try to use **[JSON](https://docs.python.org/3/library/json.html#module-json)** module that does not in itself create an arbitrary code execution vulnerability.
-  
+> from cryptography.hazmat.primitives.asymmetric import rsa, ec, dsa  
+>   
+> dsa.generate_private_key(key_size=2048, backend=backend) # Compliant  
+> rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=backend) # Compliant  
+> ec.generate_private_key(curve=ec.SECT409R1, backend=backend) # Compliant   
+   
 **Another secure function is done!** Secured coding is just a flipped hand when you know the hint!
 
 Let's hunt more vulnerable code to make **Code for Security** next episode. Stay tuned!  
   
-**#JSON #Code4Sec**  
+**#generate_private_key() #Code4Sec**  
   
 Credit/Ref:  
-[Nelson Elhage](https://blog.nelhage.com/2011/03/exploiting-pickle/)
-[python.org](https://docs.python.org/3/library/pickle.html)
+[Python static code analysis](https://rules.sonarsource.com/python/RSPEC-4426)
+[OWASP Top 10 2017 Category A3](https://owasp.org/www-project-top-ten/2017/A3_2017-Sensitive_Data_Exposure.html) - Sensitive Data Exposure
+[OWASP Top 10 2017 Category A6](https://owasp.org/www-project-top-ten/2017/A6_2017-Security_Misconfiguration.html) - Security Misconfiguration
+[ANSSI RGSv2](https://www.ssi.gouv.fr/uploads/2014/11/RGS_v-2-0_B1.pdf) - Référentiel Général de Sécurité version 2
+[NIST FIPS 186-4](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf) - Digital Signature Standard (DSS)
+[MITRE, CWE-326](https://cwe.mitre.org/data/definitions/326.html) - Inadequate Encryption Strength
   
 ______________________________
 <table border="0">
